@@ -1,6 +1,6 @@
 import unittest
 
-from fast_binance import OnlinePriceFetcher
+from ..fast_binance.fast_binance import OnlinePriceFetcher
 
 
 class TestFunctionality(unittest.TestCase):
