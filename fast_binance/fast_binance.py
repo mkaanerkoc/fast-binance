@@ -3,6 +3,7 @@ import asyncio
 from itertools import islice
 from binance import AsyncClient
 
+import pickle
 import pandas as pd
 
 
@@ -51,10 +52,19 @@ def convert_price_data_types(raw_prices:pd.DataFrame, convert_types=True):
     raw_prices = raw_prices.set_index('open_time')
     return raw_prices
 
+class PriceResult:
+    def __init__(self, symbols, interval, start, end):
+        pass
+    
+    def save(self):
+        pass
+
+    def load(self):
+        pass
 
 class OnlinePriceFetcher:
-    def __init__(self, market):
-        self._worker = DEFAULT_WORKER_COUNT # Parallel async request count
+    def __init__(self, market, worket_count = DEFAULT_WORKER_COUNT):
+        self._worker = worket_count # Parallel async request count
         self._async_client = None
         self._market = market
     
@@ -71,6 +81,7 @@ class OnlinePriceFetcher:
             await self._async_client.close_connection()
         
         prices = { result[0]: result[1] for result in results }
+        
         return prices
 
     async def _fetch_chunk(self, symbols, **kwargs):
