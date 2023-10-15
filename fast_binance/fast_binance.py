@@ -95,7 +95,8 @@ class OnlinePriceFetcher:
             price_df = convert_price_data_types(price_df)
         except Exception as e:
             print(f'An error occured while fetching {symbol}. Error: {e}. {kwargs}')
-            raise Exception(f'An error occured while fetching {symbol}. Error: {e}')
+            # raise Exception(f'An error occured while fetching {symbol}. Error: {e}')
+            return symbol, str(e)
         return symbol, price_df
 
       
