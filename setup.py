@@ -8,7 +8,7 @@ import re
 with codecs.open(
         os.path.join(
             os.path.abspath(os.path.dirname(__file__)),
-            'binance',
+            'fast-binance',
             '__init__.py'
         ), 'r', 'latin1') as fp:
     try:
