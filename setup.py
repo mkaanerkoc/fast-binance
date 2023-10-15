@@ -8,6 +8,7 @@ import re
 with codecs.open(
         os.path.join(
             os.path.abspath(os.path.dirname(__file__)),
+            'fast_binance',
             '__init__.py'
         ), 'r', 'latin1') as fp:
     try:
@@ -21,7 +22,7 @@ with open("README.rst", "r") as fh:
 setup(
     name='fast-binance',
     version=version,
-    packages=['fast-binance'],
+    packages=['fast_binance'],
     description='Asyncful wrapper around python-binance module.',
     long_description=long_description,
     long_description_content_type="text/x-rst",
