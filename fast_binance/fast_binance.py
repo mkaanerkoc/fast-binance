@@ -53,17 +53,16 @@ def convert_price_data_types(raw_prices:pd.DataFrame, convert_types=True):
 
 
 class OnlinePriceFetcher:
-    def __init__(self, market, period, span='daily'):
+    def __init__(self, market):
         self._worker = DEFAULT_WORKER_COUNT # Parallel async request count
         self._async_client = None
         self._market = market
-        self._span = span
-        self._period = period
     
 
     async def _fetch_symbols(self, symbols, **kwargs):
         self._async_client = await AsyncClient.create()
         results = []
+
         try:
             for symbols_in_chunk in chunked_iterable(symbols, self._worker):
                 res = await self._fetch_chunk(symbols_in_chunk, **kwargs)
@@ -71,7 +70,8 @@ class OnlinePriceFetcher:
         finally:
             await self._async_client.close_connection()
         
-        return results
+        prices = { result[0]: result[1] for result in results }
+        return prices
 
     async def _fetch_chunk(self, symbols, **kwargs):
         """
@@ -102,12 +102,15 @@ class OnlinePriceFetcher:
     async def _get_function(self, symbol, **kwargs):
         # TODO symbol unavailable hatasi geldiginde onu sonuca eklememek lazim
         if self._market == 'spot':
-            return await self._async_client.get_historical_klines(symbol, self._period,  **kwargs)
+            return await self._async_client.get_historical_klines(symbol,  **kwargs)
         elif self._market == 'futures':
-            return await self._async_client.futures_historical_klines(symbol, self._period,  **kwargs)
+            return await self._async_client.futures_historical_klines(symbol,  **kwargs)
         else:
             raise ValueError(f"market type is invalid : {self._market}")
 
+    async def async_download(self, symbols, **kwargs):
+        return await self._fetch_symbols(symbols, **kwargs)
+    
     def download(self, symbols, **kwargs):
         try:
             loop = asyncio.get_event_loop()
