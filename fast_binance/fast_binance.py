@@ -1,7 +1,7 @@
 import asyncio
 
 from itertools import islice
-from binance import AsyncClient
+from binance import AsyncClient, Client
 
 import pickle
 import pandas as pd
@@ -51,6 +51,30 @@ def convert_price_data_types(raw_prices:pd.DataFrame, convert_types=True):
                                         'taker_buy_quote_volume':'float64'})
     raw_prices = raw_prices.set_index('open_time')
     return raw_prices
+
+class HistoricalFundingRate:
+    def __init__(self):
+        self._client = Client()
+
+    def download(self):
+        response = self._client.futures_funding_rate(limit=1000)
+        funding_rate = pd.DataFrame(response)
+        funding_rate['fundingTime'] = pd.to_datetime(funding_rate['fundingTime'], unit='ms')
+        funding_rate = funding_rate.set_index('symbol')
+        return funding_rate
+    
+
+class MarkPrice:
+    def __init__(self):
+        self._client = Client()
+
+    def download(self):
+        response = self._client.futures_mark_price()
+        mark_price = pd.DataFrame(response)
+        mark_price['nextFundingTime'] = pd.to_datetime(mark_price['nextFundingTime'], unit='ms')
+        mark_price['time'] = pd.to_datetime(mark_price['time'], unit='ms')
+        mark_price = mark_price.set_index('symbol')
+        return mark_price
 
 class PriceResult:
     def __init__(self, symbols, interval, start, end):
@@ -134,4 +158,3 @@ class OnlinePriceFetcher:
                 raise
         res = loop.run_until_complete(self._fetch_symbols(symbols, **kwargs))
         return res
-  
