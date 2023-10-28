@@ -25,4 +25,4 @@ def archieve_data():
     print(res)
 
 if __name__ == '__main__':
-    archieve_data()
+    main()

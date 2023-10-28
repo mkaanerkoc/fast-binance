@@ -1,18 +1,16 @@
 import asyncio
 
-from itertools import islice
 from binance import AsyncClient, Client
 
-import pickle
 import pandas as pd
 
+from fast_binance.utils import chunked_iterable
 
 DEFAULT_WORKER_COUNT = 30
 
 CANDLE_COLUMNS  = ['open_time', 'open', 'high', 'low', 'close', 'volume', 
                     'close_time', 'quote_volume', 'count', 
                     'taker_buy_volume', 'taker_buy_quote_volume', 'ignore']
-
 
 
   
