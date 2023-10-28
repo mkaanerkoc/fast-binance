@@ -14,17 +14,6 @@ CANDLE_COLUMNS  = ['open_time', 'open', 'high', 'low', 'close', 'volume',
                     'taker_buy_volume', 'taker_buy_quote_volume', 'ignore']
 
 
-def chunked_iterable(iterable, chunk_size):
-    """
-    slices the given iterable into chunks with chunk_size size.
-    
-    """
-    it = iter(iterable)
-    while True:
-        chunk = list(islice(it, chunk_size))
-        if not chunk:
-            break
-        yield chunk
 
   
 def convert_price_data_types(raw_prices:pd.DataFrame, convert_types=True):
