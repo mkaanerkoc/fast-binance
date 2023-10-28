@@ -5,7 +5,9 @@ from itertools import product
 from fast_binance import (
     OnlinePriceFetcher,
     OfflineFileFetcher,
-    FuturesUsdtMetricsFile
+    FuturesUsdtMetricsFile,
+    PremiumIndexKlinesFile,
+    PriceKlinesFile
 )
 
 def main():
@@ -24,5 +26,6 @@ def archieve_data():
     res = ofl.download(files)
     print(res)
 
+
 if __name__ == '__main__':
-    main()
+    archieve_data()

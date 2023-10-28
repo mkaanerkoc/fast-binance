@@ -29,7 +29,7 @@ class OfflineFileFetcher:
             tasks.append(task)
         return await asyncio.gather(*tasks, return_exceptions=True)
 
-    async def _fetch_file(self, session, file:FileInfo):
+    async def _fetch_file(self, session, file):
         '''
         downloads zip file and extract .csv file and add column information
         returns pandas dataframe
@@ -41,7 +41,7 @@ class OfflineFileFetcher:
             with zipfile.ZipFile(io.BytesIO(data)) as archive:
                 fname = archive.namelist()[0]
                 data = pd.read_csv(archive.open(fname), dtype=object)
-
+                data = file.prepare_df(data)
         return data
     
     def download(self, files):
