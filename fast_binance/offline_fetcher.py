@@ -5,7 +5,7 @@ import io
 import pandas as pd
 import zipfile
 
-from fast_binance.archieve_files import FileInfo
+from fast_binance.archieve_files import AbstractFile
 
 from fast_binance.utils import (
     chunked_iterable
@@ -15,14 +15,14 @@ class OfflineFileFetcher:
     def __init__(self):
         self._worker = 250
 
-    async def fetch_files(self, files:list[FileInfo]):
+    async def fetch_files(self, files:list[AbstractFile]):
         res = []
         async with aiohttp.ClientSession() as session:
             for file_chunk in chunked_iterable(files, self._worker):
                 res.extend(await self._fetch_chunk(session, file_chunk))
         return res
 
-    async def _fetch_chunk(self, session, files:list[FileInfo]):
+    async def _fetch_chunk(self, session, files:list[AbstractFile]):
         tasks = []
         for file in files:
             task = asyncio.ensure_future(self._fetch_file(session, file))
@@ -34,8 +34,8 @@ class OfflineFileFetcher:
         downloads zip file and extract .csv file and add column information
         returns pandas dataframe
         '''
-
-        async with session.get(file.binance.path) as resp:
+        
+        async with session.get(file.source) as resp:
             assert resp.status == 200
             data = await resp.read()
             with zipfile.ZipFile(io.BytesIO(data)) as archive:
