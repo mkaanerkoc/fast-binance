@@ -12,6 +12,7 @@ CANDLE_COLUMNS  = ['open_time', 'open', 'high', 'low', 'close', 'volume',
                     'close_time', 'quote_volume', 'count', 
                     'taker_buy_volume', 'taker_buy_quote_volume', 'ignore']
 
+OI_STATS_COLUMNS = ['symbol', 'sumOpenInterest', 'sumOpenInterestValue', 'timestamp']
 
   
 def convert_price_data_types(raw_prices:pd.DataFrame, convert_types=True):
@@ -38,6 +39,20 @@ def convert_price_data_types(raw_prices:pd.DataFrame, convert_types=True):
                                         'taker_buy_quote_volume':'float64'})
     raw_prices = raw_prices.set_index('open_time')
     return raw_prices
+
+
+def convert_oi_data(oi_data:pd.DataFrame, convert_types=True):
+    oi_data.columns = OI_STATS_COLUMNS
+    if convert_types:
+        oi_data = oi_data.astype({
+            'timestamp': 'int64', 
+            'sumOpenInterest': 'float64', 
+            'sumOpenInterestValue':'float64',
+    })
+    oi_data['timestamp'] = pd.to_datetime(oi_data['timestamp'], unit='ms')
+    oi_data = oi_data.set_index('timestamp')
+    return oi_data
+
 
 class HistoricalFundingRate:
     def __init__(self):
@@ -73,12 +88,10 @@ class PriceResult:
     def load(self):
         pass
 
-class OnlinePriceFetcher:
-    def __init__(self, market, worket_count = DEFAULT_WORKER_COUNT):
+class MultiplexFetcher:
+    def __init__(self, worket_count = DEFAULT_WORKER_COUNT):
         self._worker = worket_count # Parallel async request count
         self._async_client = None
-        self._market = market
-    
 
     async def _fetch_symbols(self, symbols, **kwargs):
         self._async_client = await AsyncClient.create()
@@ -91,10 +104,9 @@ class OnlinePriceFetcher:
         finally:
             await self._async_client.close_connection()
         
-        prices = { result[0]: result[1] for result in results }
-        
-        return prices
-
+        result_dict = { result[0]: result[1] for result in results }
+        return result_dict
+    
     async def _fetch_chunk(self, symbols, **kwargs):
         """
         creates a Future object for every symbol in the symbol_chunk.
@@ -108,29 +120,11 @@ class OnlinePriceFetcher:
         return await asyncio.gather(*tasks, return_exceptions=True)
 
     async def _fetch_symbol(self, symbol,  **kwargs):
-        """
-        bottom-level function that sends HTTP request to Binance and awaits on response
-        """
-        try:
-            price_data_raw = await self._get_function(symbol,  **kwargs)
-            price_df = pd.DataFrame(price_data_raw)
-            price_df = convert_price_data_types(price_df)
-        except Exception as e:
-            print(f'An error occured while fetching {symbol}. Error: {e}. {kwargs}')
-            # raise Exception(f'An error occured while fetching {symbol}. Error: {e}')
-            return symbol, str(e)
-        return symbol, price_df
-
-      
+        raise NotImplementedError
+    
     async def _get_function(self, symbol, **kwargs):
-        # TODO symbol unavailable hatasi geldiginde onu sonuca eklememek lazim
-        if self._market == 'spot':
-            return await self._async_client.get_historical_klines(symbol,  **kwargs)
-        elif self._market == 'futures':
-            return await self._async_client.futures_historical_klines(symbol,  **kwargs)
-        else:
-            raise ValueError(f"market type is invalid : {self._market}")
-
+        raise NotImplementedError
+    
     async def async_download(self, symbols, **kwargs):
         return await self._fetch_symbols(symbols, **kwargs)
     
@@ -145,3 +139,54 @@ class OnlinePriceFetcher:
                 raise
         res = loop.run_until_complete(self._fetch_symbols(symbols, **kwargs))
         return res
+    
+
+class OnlinePriceFetcher(MultiplexFetcher):
+    def __init__(self, market, worket_count = DEFAULT_WORKER_COUNT):
+        super().__init__(worket_count)
+        self._market = market
+        
+    async def _fetch_symbol(self, symbol, **kwargs):
+        """
+        bottom-level function that sends HTTP request to Binance and awaits on response
+        """
+        try:
+            price_data_raw = await self._get_function(symbol,  **kwargs)
+            price_df = pd.DataFrame(price_data_raw)
+            price_df = convert_price_data_types(price_df)
+        except Exception as e:
+            print(f'An error occured while fetching {symbol}. Error: {e}. {kwargs}')
+            # raise Exception(f'An error occured while fetching {symbol}. Error: {e}')
+            return symbol, str(e)
+        return symbol, price_df
+
+
+    async def _get_function(self, symbol, **kwargs):
+        # TODO symbol unavailable hatasi geldiginde onu sonuca eklememek lazim
+        if self._market == 'spot':
+            return await self._async_client.get_historical_klines(symbol,  **kwargs)
+        elif self._market == 'futures':
+            return await self._async_client.futures_historical_klines(symbol,  **kwargs)
+        else:
+            raise ValueError(f"market type is invalid : {self._market}")
+
+class OpenInterestFetcher(MultiplexFetcher):
+    async def _get_function(self, **kwargs):
+        # TODO symbol unavailable hatasi geldiginde onu sonuca eklememek lazim
+        return await self._async_client.futures_open_interest_hist(**kwargs)
+    
+    async def _fetch_symbol(self, symbol, **kwargs):
+        """
+        bottom-level function that sends HTTP request to Binance and awaits on response
+        """
+        try:
+            kwargs['symbol'] = symbol
+            oi_raw = await self._get_function(**kwargs)
+            oi_df = pd.DataFrame(oi_raw)
+            oi_df = convert_oi_data(oi_df)
+        except Exception as e:
+            print(f'An error occured while fetching {symbol}. Error: {e}. {kwargs}')
+            # raise Exception(f'An error occured while fetching {symbol}. Error: {e}')
+            return symbol, str(e)
+        return symbol, oi_df
+        

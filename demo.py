@@ -72,14 +72,15 @@ def analyze_premium_index_daily():
 
 def download_agg_trades():
     ofl = OfflineFileFetcher()
-    symbol = 'LOOMUSDT'
+    symbol = 'AVAXUSDT'
     
-    days = pd.date_range('2023-09-01', '2023-11-01', freq='1D')
+    days = pd.date_range('2023-11-01', '2023-11-04', freq='1D')
 
-    files = [AggregatedTradesFile(symbol, str(day.date()), 'daily', 'spot') 
+    files = [AggregatedTradesFile(symbol, str(day.date()), 'daily', 'futures') 
              for symbol, day in product([symbol], days)]
     
     res = ofl.download(files)
+
     df = pd.concat(list(filter(lambda x: isinstance(x, pd.DataFrame), res)))
     df.to_csv(f'{symbol}_agg_trades.csv')
 

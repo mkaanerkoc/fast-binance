@@ -23,7 +23,7 @@ setup(
     name='fast-binance',
     version=version,
     packages=['fast_binance'],
-    description='Asyncful wrapper around python-binance module.',
+    description='Asyncful wrapper around python-binance module and data.binance.vision .',
     long_description=long_description,
     long_description_content_type="text/x-rst",
     url='https://github.com/mkaanerkoc/fast-binance',

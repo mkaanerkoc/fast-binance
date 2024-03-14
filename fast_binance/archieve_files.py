@@ -129,9 +129,8 @@ class AggregatedTradesFile(AbstractFile):
         self.span = span
         self.market = 'spot' if market == 'spot' else 'futures/um'
         self.name = f'{self.symbol}-aggTrades-{self.date}' # ACAUSDT-aggTrades-2024-02-07
-        self.columns = ['aggTradeID', 'price', 'quantity', 'ftId', 'ltId', 'time', 'is_buyer_maker', 'ig'] \
-                        if market == 'spot' \
-                        else ['aggTradeID', 'price', 'quantity', 'ftId', 'ltId', 'time', 'is_buyer_maker', 'ig']
+        self.columns = ['aggTradeID', 'price', 'quantity', 'ftId', 'ltId', 'time', 'is_buyer_maker', 'ig']  if market == 'spot' \
+                        else ['aggTradeID', 'price', 'quantity', 'ftId', 'ltId', 'time', 'is_buyer_maker']
 
     @property
     def source(self):
@@ -146,9 +145,13 @@ class AggregatedTradesFile(AbstractFile):
         pass
 
     def prepare_df(self, df):
-        df.columns = ['aggTradeID', 'price', 'quantity', 'ftId', 'ltId', 'time', 'is_buyer_maker', 'ig']
+        print('IM HERE 1', self.columns)
+        df.columns = self.columns
         df = df.astype({"time":int})
+        print('IM HERE 1b')
         df['time'] = pd.to_datetime(df['time'], unit='ms')
+        print('IM HERE 2')
         df = df.drop(columns=['ftId', 'ltId', 'ig'])
         df = df.set_index(df['time']).sort_index()
+        print('IM HERE 3')
         return df

@@ -34,13 +34,13 @@ class OfflineFileFetcher:
         downloads zip file and extract .csv file and add column information
         returns pandas dataframe
         '''
-        
+        print(file.source)
         async with session.get(file.source) as resp:
             assert resp.status == 200
             data = await resp.read()
             with zipfile.ZipFile(io.BytesIO(data)) as archive:
                 fname = archive.namelist()[0]
-                data = pd.read_csv(archive.open(fname), dtype=object)
+                data = pd.read_csv(archive.open(fname), dtype=object, header=None)
                 data = file.prepare_df(data)
         return data
     
